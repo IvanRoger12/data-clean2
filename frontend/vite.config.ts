@@ -4,6 +4,8 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   build: {
+    outDir: "dist",     // ← Vercel attend "dist"
+    emptyOutDir: true,  // ← nettoie le dossier avant build
     sourcemap: false
   }
 });
