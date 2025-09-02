@@ -1,7 +1,20 @@
 {
-  "framework": "vite",
-  "buildCommand": "cd frontend && npm install --no-audit --no-fund && npm run build",
-  "outputDirectory": "frontend/dist",
+  "version": 2,
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "dist" }
+    },
+    {
+      "src": "api/**/*.ts",
+      "use": "@vercel/node@3"
+    }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/frontend/dist/$1" }
+  ],
   "functions": {
     "api/**/*.ts": { "runtime": "nodejs22.x" }
   },
