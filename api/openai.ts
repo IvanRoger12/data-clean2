@@ -1,62 +1,61 @@
-// /api/openai.ts
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+export const config = { runtime: "edge" };
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Content-Type', 'application/json');
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ ok: false, error: 'Method not allowed' });
-  }
-
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ ok: false, error: 'Missing OPENAI_API_KEY' });
-  }
-
+export default async function handler(req: Request) {
   try {
-    const { messages } = req.body || {};
-    if (!Array.isArray(messages)) {
-      return res.status(400).json({ ok: false, error: 'Body must include messages: Array<{role, content}>' });
+    const body = await req.json().catch(() => ({}));
+    const { prompt, context } = body || {};
+    const key = process.env.OPENAI_API_KEY;
+
+    if (!key) {
+      // fallback local
+      return new Response(
+        JSON.stringify({
+          reply:
+            "Mode démo local (pas de clé OpenAI). Je peux normaliser les dates en ISO-8601, formater les téléphones en E.164, et supprimer les doublons recommandés."
+        }),
+        { headers: { "content-type": "application/json" } }
+      );
     }
 
-    // On force un “system” pour cadrer l’agent DataClean
-    const system = {
-      role: 'system',
-      content:
-        "Tu es DataClean AI, un assistant expert en nettoyage de données d'entreprise. " +
-        "Tu réponds de façon concrète, courte et actionnable. " +
-        "Tu proposes des règles de validation (email, téléphone E.164, dates ISO 8601, IBAN, URL), " +
-        "des stratégies de dédoublonnage (fuzzy, clés composites), des imputations (moyenne/mode), " +
-        "et des conseils pour améliorer la qualité des données."
-    };
+    const sys =
+      "Tu es un assistant expert en nettoyage de données. Donne des conseils courts et actionnables (doublons, manquants, normalisation).";
 
-    const payload = {
-      model: 'gpt-4o-mini',
-      messages: [system, ...messages].slice(-20), // contexte court
-      temperature: 0.3
-    };
-
-    const r = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
+    const r = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
+        "content-type": "application/json",
+        authorization: `Bearer ${key}`
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: sys },
+          {
+            role: "user",
+            content:
+              `Question: ${prompt}\n` +
+              `Context: ${JSON.stringify(context).slice(0, 1500)}`
+          }
+        ],
+        temperature: 0.2,
+        max_tokens: 250
+      })
     });
 
     if (!r.ok) {
-      const err = await r.text();
-      return res.status(r.status).json({ ok: false, error: err });
+      const txt = await r.text();
+      return new Response(JSON.stringify({ reply: txt.slice(0, 500) }), {
+        headers: { "content-type": "application/json" }
+      });
     }
-
-    const data = await r.json();
-    const text =
-      data?.choices?.[0]?.message?.content ??
-      'Désolé, je n’ai pas pu générer de réponse.';
-
-    return res.status(200).json({ ok: true, text });
+    const j = await r.json();
+    const reply = j.choices?.[0]?.message?.content || "";
+    return new Response(JSON.stringify({ reply }), {
+      headers: { "content-type": "application/json" }
+    });
   } catch (e: any) {
-    return res.status(500).json({ ok: false, error: e?.message || 'Server error' });
+    return new Response(JSON.stringify({ reply: e?.message || "error" }), {
+      headers: { "content-type": "application/json" }
+    });
   }
 }
