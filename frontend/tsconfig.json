@@ -10,7 +10,9 @@
     "noEmit": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "strict": false
+    "strict": false,
+    "types": ["vite/client"],
+    "forceConsistentCasingInFileNames": true
   },
   "include": ["src"]
 }
