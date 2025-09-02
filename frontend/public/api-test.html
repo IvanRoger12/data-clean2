@@ -1,0 +1,13 @@
+<!doctype html><meta charset="utf-8">
+<title>Test /api/openai</title>
+<button id="b">Tester /api/openai</button><pre id="o">—</pre>
+<script>
+document.getElementById('b').onclick = async () => {
+  const r = await fetch('/api/openai', {
+    method:'POST',
+    headers:{'content-type':'application/json'},
+    body: JSON.stringify({ messages:[{role:'user', content:'Dis bonjour.'}] })
+  });
+  document.getElementById('o').textContent = JSON.stringify(await r.json(), null, 2);
+};
+</script>
