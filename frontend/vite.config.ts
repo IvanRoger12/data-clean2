@@ -1,8 +1,9 @@
-import { defineConfig } from 'vite'
-import legacy from '@vitejs/plugin-legacy'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  plugins: [legacy()],
-  build: { outDir: 'dist' },
-  server: { host: true }
-})
+  plugins: [react()],
+  build: {
+    outDir: 'dist'
+  }
+});
