@@ -1,5 +1,11 @@
 {
-  "installCommand": "cd frontend && (npm ci || npm i)",
+  "version": 2,
+  "framework": null,
+  "installCommand": "cd frontend && npm install --no-audit --no-fund",
   "buildCommand": "cd frontend && npm run build",
-  "outputDirectory": "frontend/dist"
+  "outputDirectory": "frontend/dist",
+  "routes": [
+    { "src": "^/api/(.*)$", "dest": "/api/$1" },
+    { "src": ".*", "dest": "/index.html" }
+  ]
 }
